@@ -8,7 +8,7 @@ class DeepQNet {
     final int REPLAY_SIZE = 10000;
     final int BATCH_SIZE = 128;
 
-    ArrayList<ArrayList> experience;
+    ArrayList<Replay> experience;
 
     float epsilon;
     int state_dim;
@@ -21,34 +21,26 @@ class DeepQNet {
 
     // 初始化
     DeepQNet (int[] layers) {
-        experience = new ArrayList<ArrayList>();
+        experience = new ArrayList<Replay>();
         
         //init some parameters
         epsilon = INITIAL_EPSILON;
 
-        // 8个状态：蛇头方向二进制表示、蛇头到四面墙距离、食物相对位置二进制表示
         state_dim = layers[0];
 
-        // 4个动作：上下左右
         action_dim = layers[layers.length - 1];
 
         mainNet = new NeuralNet(layers, 0.4, 0.8);
         targetNet = mainNet.clone();
-        //create_training_method();
 
     }
 
     // 感知存储信息
     void perceive(float[] state, int action, float reward, float[] nextState, boolean done) {
 
-        ArrayList<Object> temp = new ArrayList<Object>();
-        temp.add(state);
-        temp.add(action);
-        temp.add(reward);
-        temp.add(nextState);
-        temp.add(done);
+        Replay replay = new Replay(state, action, reward, nextState, done);
 
-        experience.add(temp);
+        experience.add(replay);
         if (experience.size() > REPLAY_SIZE)
             experience.remove(0);
         if (experience.size() > BATCH_SIZE) {
@@ -58,41 +50,36 @@ class DeepQNet {
     }
 
     // 训练网络
-    void train_Q_network() { //<>//
+    void train_Q_network() {
         step++;
 
-        ArrayList<ArrayList> temp = (ArrayList<ArrayList>)experience.clone();
+        ArrayList<Replay> temp = new ArrayList<Replay>(experience);
         Collections.shuffle(temp);
 
         // 加入minibatch
-        ArrayList<ArrayList> minibatch = new ArrayList<ArrayList>(temp.subList(0, BATCH_SIZE));       
+        ArrayList<Replay> minibatch = new ArrayList<Replay>(temp.subList(0, BATCH_SIZE));       
 
         for (int idx = 0; idx < BATCH_SIZE; idx++) {
 
-            float[] state = (float[])minibatch.get(idx).get(0);
-            int action = (int)minibatch.get(idx).get(1);
-            float reward = (float)minibatch.get(idx).get(2);
-            float[] nextState = (float[])minibatch.get(idx).get(3);
+            float[] state = minibatch.get(idx).state.clone();
+            int action = minibatch.get(idx).action;
+            float reward = minibatch.get(idx).reward;
+            float[] nextState = minibatch.get(idx).nextState.clone();
 
             float[] qValue = mainNet.computeOut(state);
             float[] qValueNext = targetNet.computeOut(nextState);
             float y;        
 
-            boolean done = (boolean)minibatch.get(idx).get(4);
+            boolean done = minibatch.get(idx).done;
             if (done) {
                 y = reward;
             } else {
                 y = reward + GAMMA * max(qValueNext);
             }
 
-            float[] targetY = new float[action_dim];
-            for (int i = 0; i < action_dim; i++) {
-                if (i == action) {
-                    targetY[i] = y;
-                } else {
-                    targetY[i] = qValue[i];
-                }
-            }
+            float[] targetY = qValue.clone();
+            
+            targetY[action] = y;
 
             mainNet.updateWeight(targetY);
             
@@ -102,17 +89,16 @@ class DeepQNet {
 
     }
     
-
     // 输出带随机的动作
     int egreedy_action(float[] state) {
         float[] qValue = mainNet.computeOut(state);
         if (random(1) <= epsilon){
             if (epsilon > FINAL_EPSILON)
-                epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000;
+                epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 100000;
             return int(floor(random(action_dim)));
         } else{
             if (epsilon > FINAL_EPSILON)
-                epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000;
+                epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 100000;
             int largest = 0;
             for (int i = 1; i < qValue.length; i++) {
                 if (qValue[i] > qValue[largest])
