@@ -14,7 +14,7 @@ int AIMode = 0;
 
 DeepQNet DQN;
 
-int fps = 15;
+int fps = 10;
 
 void setup() {
     font = createFont("font.ttf", 32);
@@ -30,7 +30,7 @@ void setup() {
     panelStart = new PVector(panelStartX, panelStartY);
 
     if (AI) {
-        DQN = new DeepQNet(new int[]{8, 8, 6, 4, 4});
+        DQN = new DeepQNet(new int[]{12, 4});
     }
 
     snake = new Snake(gridWidth, panelStart, panelSize);
@@ -51,8 +51,14 @@ void draw() {
         int action = 0;
 
         text("Training Generation: " + str(snake.gen) + "\nScore: " + str(snake.score), (width + menuStart) / 2, height - 5 * gridWidth / 2);
-        text(str(state[0])+' '+str(state[1]) +'\n'+ str(state[2])+' '+str(state[3]) +' '+ str(state[4])+' '+str(state[5]) +'\n'+ str(state[6])+' '+str(state[7]), (width + menuStart) / 2, height / 2);
-        action = DQN.egreedy_action(state);
+        text(str(state[0])+' '+str(state[1])+' '+str(state[2])+' '+str(state[3])+'\n'+str(state[4])+' '+str(state[5])+' '+str(state[6])+' '+str(state[7])+'\n'+str(state[8])+' '+str(state[9])+' '+str(state[10])+' '+str(state[11]), (width + menuStart) / 2, height / 2);
+        
+        if (snake.gen % 20 == 0) {
+            action = DQN.action(state);
+        } else {
+            action = DQN.egreedy_action(state);
+        }
+        
       
         char[] str = {'U', 'L', 'D', 'R'};
         snake.turnAround(str[action]);
@@ -63,10 +69,15 @@ void draw() {
         if (snake.collision())
             reward = -1;
         if (snake.eat())
-            reward = 2;
+            reward = 5;
         DQN.perceive(state, action, reward, next_state, snake.reset);        
 
-    } else {        
+    } else {
+
+        float[] state = snake.getState();
+        text(str(state[0])+' '+str(state[1])+' '+str(state[2])+' '+str(state[3])+'\n'+str(state[4])+' '+str(state[5])+' '+str(state[6])+' '+str(state[7])+'\n'+str(state[8])+' '+str(state[9])+' '+str(state[10])+' '+str(state[11]), (width + menuStart) / 2, height / 2);
+
+
         if (!snake.pause) {
             snake.moveStraight();
             text("空格键暂停\n回车键复位", (width + menuStart) / 2, height - 5 * gridWidth / 2);

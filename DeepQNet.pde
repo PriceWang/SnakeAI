@@ -84,7 +84,7 @@ class DeepQNet {
             mainNet.updateWeight(targetY);
             
         }
-        if (step % 10 == 0)
+        if (step % 20 == 0)
             targetNet = mainNet.clone();
 
     }

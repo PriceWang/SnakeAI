@@ -103,31 +103,27 @@ class Snake {
     }
 
     float[] getState() {
-        float[] state = new float[8];
-        switch (direction) {
-            case 'R':
-                state[0] = 0;
-                state[1] = 0;
-                break;
-            case 'L':
-                state[0] = 0;
-                state[1] = 1;
-                break;
-            case 'U':
-                state[0] = 1;
-                state[1] = 0;
-                break;
-            case 'D':
-                state[0] = 1;
-                state[1] = 1;
-                break;	
-        }
-        state[2] = snakeHead.x;
-        state[3] = snakeHead.y;
-        state[4] = panelSize.x - snakeHead.x;
-        state[5] = panelSize.y - snakeHead.y;
-        state[6] = snakeHead.x - food.pos.x;
-        state[7] = snakeHead.y - food.pos.y;
+        PVector tempUp = new PVector(snakeHead.x, snakeHead.y - 1);
+        PVector tempRight = new PVector(snakeHead.x + 1, snakeHead.y);
+        PVector tempDown = new PVector(snakeHead.x, snakeHead.y + 1);
+        PVector tempLeft = new PVector(snakeHead.x - 1, snakeHead.y);
+
+        float[] state = new float[12];
+        
+        state[0] = (tempLeft.x < 0) ? 1 : 0;
+        state[1] = (tempUp.y < 0) ? 1 : 0;
+        state[2] = (tempRight.x >= panelSize.x) ? 1 : 0;
+        state[3] = (tempDown.y >= panelSize.y) ? 1 : 0;
+
+        state[4] = snakeBody.contains(tempUp) ? 1 : 0;
+        state[5] = snakeBody.contains(tempRight) ? 1 : 0;
+        state[6] = snakeBody.contains(tempDown) ? 1 : 0;
+        state[7] = snakeBody.contains(tempLeft) ? 1 : 0;
+
+        state[8] = (tempUp.equals(food.pos)) ? 1 : 0;
+        state[9] = (tempRight.equals(food.pos)) ? 1 : 0;
+        state[10] = (tempDown.equals(food.pos)) ? 1 : 0;
+        state[11] = (tempLeft.equals(food.pos)) ? 1 : 0;
         return state;
     }
 
