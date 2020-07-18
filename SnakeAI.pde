@@ -30,7 +30,7 @@ void setup() {
     panelStart = new PVector(panelStartX, panelStartY);
 
     if (AI) {
-        DQN = new DeepQNet(new int[]{12, 4});
+        DQN = new DeepQNet(new int[]{24, 16, 16, 4});
     }
 
     snake = new Snake(gridWidth, panelStart, panelSize);
@@ -51,7 +51,6 @@ void draw() {
         int action = 0;
 
         text("Training Generation: " + str(snake.gen) + "\nScore: " + str(snake.score), (width + menuStart) / 2, height - 5 * gridWidth / 2);
-        text(str(state[0])+' '+str(state[1])+' '+str(state[2])+' '+str(state[3])+'\n'+str(state[4])+' '+str(state[5])+' '+str(state[6])+' '+str(state[7])+'\n'+str(state[8])+' '+str(state[9])+' '+str(state[10])+' '+str(state[11]), (width + menuStart) / 2, height / 2);
         
         if (snake.gen % 20 == 0) {
             action = DQN.action(state);
@@ -73,10 +72,6 @@ void draw() {
         DQN.perceive(state, action, reward, next_state, snake.reset);        
 
     } else {
-
-        float[] state = snake.getState();
-        text(str(state[0])+' '+str(state[1])+' '+str(state[2])+' '+str(state[3])+'\n'+str(state[4])+' '+str(state[5])+' '+str(state[6])+' '+str(state[7])+'\n'+str(state[8])+' '+str(state[9])+' '+str(state[10])+' '+str(state[11]), (width + menuStart) / 2, height / 2);
-
 
         if (!snake.pause) {
             snake.moveStraight();
