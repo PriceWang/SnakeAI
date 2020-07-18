@@ -16,8 +16,8 @@ class DeepQNet {
     
     int step = 0;
 
-    NeuralNet targetNet;
-    NeuralNet mainNet;
+    NeuralNetwork targetNet;
+    NeuralNetwork mainNet;
 
     // 初始化
     DeepQNet (int[] layers) {
@@ -30,7 +30,7 @@ class DeepQNet {
 
         action_dim = layers[layers.length - 1];
 
-        mainNet = new NeuralNet(layers, 0.4, 0.8);
+        mainNet = new NeuralNetwork(layers);
         targetNet = mainNet.clone();
 
     }
@@ -61,13 +61,13 @@ class DeepQNet {
 
         for (int idx = 0; idx < BATCH_SIZE; idx++) {
 
-            float[] state = minibatch.get(idx).state.clone();
+            float[] state = minibatch.get(idx).state;
             int action = minibatch.get(idx).action;
             float reward = minibatch.get(idx).reward;
-            float[] nextState = minibatch.get(idx).nextState.clone();
+            float[] nextState = minibatch.get(idx).nextState;
 
-            float[] qValue = mainNet.computeOut(state);
-            float[] qValueNext = targetNet.computeOut(nextState);
+            float[] qValue = mainNet.guess(state);
+            float[] qValueNext = targetNet.guess(nextState);
             float y;        
 
             boolean done = minibatch.get(idx).done;
@@ -77,11 +77,11 @@ class DeepQNet {
                 y = reward + GAMMA * max(qValueNext);
             }
 
-            float[] targetY = qValue.clone();
+            float[] targetY = qValue;
             
             targetY[action] = y;
 
-            mainNet.updateWeight(targetY);
+            mainNet.train(state, targetY);
             
         }
         if (step % 20 == 0)
@@ -91,7 +91,7 @@ class DeepQNet {
     
     // 输出带随机的动作
     int egreedy_action(float[] state) {
-        float[] qValue = mainNet.computeOut(state);
+        float[] qValue = mainNet.guess(state);
         if (random(1) <= epsilon){
             if (epsilon > FINAL_EPSILON)
                 epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 100000;
@@ -110,7 +110,7 @@ class DeepQNet {
 
     // 输出动作
     int action(float[] state) {
-        float[] qValue = mainNet.computeOut(state);
+        float[] qValue = mainNet.guess(state);
         int largest = 0;
         for (int i = 1; i < qValue.length; i++) {
             if (qValue[i] > qValue[largest])
