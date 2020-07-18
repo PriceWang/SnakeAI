@@ -70,7 +70,7 @@ class Snake {
             tempX = tempX2;
             tempY = tempY2;
         } 
-        if (eat()) {
+        if (eat(snakeHead)) {
             snakeBody.add(new PVector(tempX, tempY));
             food = new Food(gridWidth, panelStart, panelSize, snakeHead, snakeBody);
             score++;
@@ -82,49 +82,104 @@ class Snake {
         }
     }
 
-    void turnAround(char dire) {
+    void turnAround (char dire) {
         if (!((direction == 'U' && dire == 'D') || (direction == 'D' && dire == 'U') || (direction == 'R' && dire == 'L') || (direction == 'L' && dire == 'R'))) {
             direction = dire;
         }
     }
 
     boolean collision() {
-        if (snakeHead.x < 0 || snakeHead.x >= panelSize.x || snakeHead.y < 0 || snakeHead.y >= panelSize.y) {
+        if (wallCollision(snakeHead) || bodyCollision(snakeHead, snakeBody))
             return true;
-        }
-        if (snakeBody.contains(snakeHead)) {
+        return false;
+    }
+
+    boolean wallCollision (PVector head) {
+        if (head.x < 0 || head.x >= panelSize.x || head.y < 0 || head.y >= panelSize.y) {
             return true;
         }
         return false;
+    }
+
+    boolean bodyCollision (PVector head, ArrayList<PVector> body) {
+        if (body.contains(head)) {
+            return true;
+        }
+        return false;
+    }
+
+    boolean eat (PVector head) {
+        return head.equals(food.pos);
     }
 
     boolean eat () {
         return snakeHead.equals(food.pos);
     }
 
-    float[] getState() {
-        PVector tempUp = new PVector(snakeHead.x, snakeHead.y - 1);
-        PVector tempRight = new PVector(snakeHead.x + 1, snakeHead.y);
-        PVector tempDown = new PVector(snakeHead.x, snakeHead.y + 1);
-        PVector tempLeft = new PVector(snakeHead.x - 1, snakeHead.y);
-
-        float[] state = new float[12];
+    float[] getState() {       
+        float[] temp = new float[3];
+        float[] state = new float[24];
         
-        state[0] = (tempLeft.x < 0) ? 1 : 0;
-        state[1] = (tempUp.y < 0) ? 1 : 0;
-        state[2] = (tempRight.x >= panelSize.x) ? 1 : 0;
-        state[3] = (tempDown.y >= panelSize.y) ? 1 : 0;
+        temp = lookInOneDirection(new PVector(0, 1));
+        state[0] = temp[0];
+        state[1] = temp[1];
+        state[2] = temp[2];
 
-        state[4] = snakeBody.contains(tempUp) ? 1 : 0;
-        state[5] = snakeBody.contains(tempRight) ? 1 : 0;
-        state[6] = snakeBody.contains(tempDown) ? 1 : 0;
-        state[7] = snakeBody.contains(tempLeft) ? 1 : 0;
+        temp = lookInOneDirection(new PVector(0, -1));
+        state[3] = temp[0];
+        state[4] = temp[1];
+        state[5] = temp[2];
 
-        state[8] = (tempUp.equals(food.pos)) ? 1 : 0;
-        state[9] = (tempRight.equals(food.pos)) ? 1 : 0;
-        state[10] = (tempDown.equals(food.pos)) ? 1 : 0;
-        state[11] = (tempLeft.equals(food.pos)) ? 1 : 0;
-        return state;
+        temp = lookInOneDirection(new PVector(1, 0));
+        state[6] = temp[0];
+        state[7] = temp[1];
+        state[8] = temp[2];
+
+        temp = lookInOneDirection(new PVector(-1, 0));
+        state[9] = temp[0];
+        state[10] = temp[1];
+        state[11] = temp[2];
+
+        temp = lookInOneDirection(new PVector(1, 1));
+        state[12] = temp[0];
+        state[13] = temp[1];
+        state[14] = temp[2];
+
+        temp = lookInOneDirection(new PVector(1, -1));
+        state[15] = temp[0];
+        state[16] = temp[1];
+        state[17] = temp[2];
+
+        temp = lookInOneDirection(new PVector(-1, 1));
+        state[18] = temp[0];
+        state[19] = temp[1];
+        state[20] = temp[2];
+
+        temp = lookInOneDirection(new PVector(-1, -1));
+        state[21] = temp[0];
+        state[22] = temp[1];
+        state[23] = temp[2];
+
+
+        return state;        
+    }
+
+    float[] lookInOneDirection(PVector dire) {
+        float[] temp = new float[3];
+        float distance = 0;
+        PVector pos = new PVector(snakeHead.x, snakeHead.y);
+        while (!wallCollision(pos)) {
+            if (eat(pos)) {
+                temp[0] = distance;
+            }
+            if (bodyCollision(pos, snakeBody)) {
+                temp[1] = distance;
+            }
+            pos.add(dire);
+            distance++;
+        }
+        temp[2] = distance;
+        return temp;
     }
 
     void show() {
